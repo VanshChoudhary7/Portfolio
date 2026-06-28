@@ -1,0 +1,90 @@
+{
+  "projects": [
+    {
+      "id": "1",
+      "title": "PhishGuard",
+      "description": "An AI-powered phishing detection platform that analyzes suspicious URLs using machine learning and heuristic-based detection techniques. Features real-time URL analysis, phishing risk prediction, and an interactive awareness dashboard to help users identify and avoid online threats.",
+      "tags": [
+        "Python",
+        "Machine Learning",
+        "Flask",
+        "React",
+        "Scikit-learn"
+      ],
+      "github": "https://github.com/VanshChoudhary7/PhishGuard",
+      "demo": "https://phish-gaurd-beta.vercel.app/",
+      "featured": true
+  },
+    {
+      "id": "2",
+      "title": "Memory Master",
+      "description": "An interactive Simon Says-inspired memory game that challenges players to memorize and repeat increasingly complex color sequences. Features progressive difficulty, score tracking, responsive animations, and an engaging user experience to improve memory and concentration.",
+      "tags" : [
+        "HTML",
+        "CSS",
+        "JavaScript",
+        "DOM",
+        "Game Development"
+      ],
+      "github": "https://github.com/VanshChoudhary7/memory-master-simon-game",
+      "demo": "https://memory-master-simon-game.vercel.app/",
+      "featured": true
+    }
+  ],
+  "skills": {
+    "Frontend": [
+      "React",
+      "TypeScript",
+      "Next.js",
+      "Tailwind CSS",
+      "Redux",
+      "Vite"
+    ],
+    "Backend": [
+      "Node.js",
+      "Express",
+      "FastAPI",
+      "Spring Boot",
+      "REST APIs"
+    ],
+    "Languages": [
+      "JavaScript",
+      "TypeScript",
+      "Python",
+      "Java",
+      "SQL"
+    ],
+    "Databases": [
+      "MongoDB",
+      "PostgreSQL",
+      "MySQL",
+      "Mongoose"
+    ],
+    "Tools & DevOps": [
+      "Docker",
+      "Git",
+      "Linux",
+      "AWS",
+      "CI/CD"
+    ]
+  },
+  "education": [
+    {
+      "id": "1",
+      "degree": "B.Tech in Computer Science",
+      "institution": "JIMS Greater Noida",
+      "year": "2024 – 2028",
+      "gpa": "8.5 / 10"
+    }
+  ],
+  "messages": [
+    {
+      "id": "1782628437999",
+      "name": "Vansh Choudhary",
+      "email": "vanshchoudhary.cse2024@jimsgn.org",
+      "subject": "For Work Regarding",
+      "message": "for work regarding",
+      "receivedAt": "2026-06-28T06:33:57.999Z"
+    }
+  ]
+}

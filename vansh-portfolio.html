@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Vansh — Full-Stack Engineer</title>
+<meta name="description" content="Vansh — Full-Stack Software Engineer specializing in distributed systems, open-source tooling, and robust web applications."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/umd/lucide.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { mono: ["'JetBrains Mono'", "monospace"] }
+    }
+  }
+}
+</script>
+<style>
+  *{box-sizing:border-box}
+  body{background:#060b18;color:#f1f5f9;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+  ::selection{background:rgba(99,102,241,.3);color:#e0e7ff}
+  ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#060b18}
+  ::-webkit-scrollbar-thumb{background:#1e2d5a;border-radius:3px}
+  ::-webkit-scrollbar-thumb:hover{background:#6366f1}
+  .gradient-text{background:linear-gradient(135deg,#6366f1 0%,#a5b4fc 50%,#34d399 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .card-glow{transition:box-shadow .25s,border-color .25s,background .25s}
+  .card-glow:hover{box-shadow:0 0 0 1px rgba(99,102,241,.35),0 8px 32px rgba(99,102,241,.09)}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+  .animate-fade{animation:fadeIn .6s ease forwards}
+  .animate-up{animation:slideUp .65s ease forwards}
+  .animate-spin{animation:spin .75s linear infinite}
+  .animate-pulse{animation:pulse 2s ease-in-out infinite}
+  .animate-bounce{animation:bounce 1.2s ease-in-out infinite}
+  html{scroll-behavior:smooth}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+// ─── MOCK API ────────────────────────────────────────────────────────────────
+const DB = {
+  projects:[
+    {id:"1",title:"PhishGuard",description: "An AI-powered phishing detection platform that analyzes suspicious URLs using machine learning and heuristic-based detection techniques. Features real-time URL analysis, phishing risk prediction, and an interactive awareness dashboard to help users identify and avoid online threats.",tags:["Python", "Machine Learning" , "Flask" , "React" , "Scikit-learn"],github:"https://github.com/VanshChoudhary7/PhishGuard",demo:"https://phish-gaurd-beta.vercel.app/",featured:true},
+  ],
+  skills:{
+    "Frontend":["React","Next.js","Tailwind CSS","Redux","Vite"],
+    "Backend":["Node.js","Express","FastAPI","Spring Boot","REST APIs"],
+    "Languages":["Java","JavaScript","Python","SQL"],
+    "Databases":["MongoDB","PostgreSQL","MySQL","Mongoose"],
+    "Tools & DevOps":["Docker","Git","Linux","AWS","CI/CD" ]
+  }
+};
+
+async function mockFetch(url, opts){
+  await new Promise(r=>setTimeout(r,400));
+  if(url.startsWith('/api/projects')){
+    const tag=new URL(url,location.href).searchParams.get('tag');
+    let p=DB.projects;
+    if(tag&&tag!=='All') p=p.filter(x=>x.tags.includes(tag));
+    return {ok:true,json:()=>Promise.resolve({success:true,data:p})};
+  }
+  if(url==='/api/skills') return {ok:true,json:()=>Promise.resolve({success:true,data:DB.skills})};
+  if(url==='/api/contact'&&opts?.method==='POST'){
+    const body=JSON.parse(opts.body);
+    const errs=[];
+    if(!body.name||body.name.trim().length<2) errs.push("Name must be at least 2 characters.");
+    if(!body.email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) errs.push("A valid email is required.");
+    if(!body.subject||body.subject.trim().length<3) errs.push("Subject must be at least 3 characters.");
+    if(!body.message||body.message.trim().length<10) errs.push("Message must be at least 10 characters.");
+    if(errs.length) return {ok:false,status:400,json:()=>Promise.resolve({success:false,errors:errs})};
+    return {ok:true,status:201,json:()=>Promise.resolve({success:true,message:"Message received! I'll get back to you within 24 hours.",data:{id:Date.now()}})};
+  }
+  return {ok:false,status:404,json:()=>Promise.resolve({error:'Not found'})};
+}
+
+// ─── REACT APP ───────────────────────────────────────────────────────────────
+const {useState,useEffect,useRef}=React;
+const e=React.createElement;
+
+// Lucide icon helper
+function Icon({name,size=16,className=''}){
+  const [svg,setSvg]=useState('');
+  useEffect(()=>{
+    if(window.lucide&&window.lucide[name]){
+      const ic=window.lucide.createElement(window.lucide[name]);
+      if(ic) setSvg(ic.outerHTML||'');
+    }
+  },[name]);
+  return e('span',{
+    className:'inline-flex items-center justify-center '+className,
+    style:{width:size,height:size,flexShrink:0},
+    dangerouslySetInnerHTML:{__html:svg}
+  });
+}
+
+// ─── NAVBAR ──────────────────────────────────────────────────────────────────
+function Navbar(){
+  const [open,setOpen]=useState(false);
+  const [scrolled,setScrolled]=useState(false);
+  const [active,setActive]=useState('');
+  useEffect(()=>{
+    const fn=()=>setScrolled(window.scrollY>20);
+    window.addEventListener('scroll',fn);
+    return ()=>window.removeEventListener('scroll',fn);
+  },[]);
+  const go=(href)=>{setOpen(false);setActive(href);document.querySelector(href)?.scrollIntoView({behavior:'smooth'})};
+  const links=[{l:'About',h:'#about'},{l:'Skills',h:'#skills'},{l:'Projects',h:'#projects'},{l:'Contact',h:'#contact'}];
+  return e('header',{style:{position:'fixed',top:0,left:0,right:0,zIndex:50,transition:'all .3s',
+    background:scrolled?'rgba(6,11,24,0.96)':'transparent',
+    backdropFilter:scrolled?'blur(12px)':'none',
+    borderBottom:scrolled?'1px solid rgba(51,65,85,0.4)':'none',
+    boxShadow:scrolled?'0 8px 32px rgba(0,0,0,.25)':'none'}},
+    e('div',{style:{maxWidth:1152,margin:'0 auto',padding:'0 24px',height:64,display:'flex',alignItems:'center',justifyContent:'space-between'}},
+      e('button',{onClick:()=>window.scrollTo({top:0,behavior:'smooth'}),style:{display:'flex',alignItems:'center',gap:8,background:'none',border:'none',cursor:'pointer'}},
+        e('div',{style:{width:32,height:32,borderRadius:10,background:'rgba(99,102,241,.15)',border:'1px solid rgba(99,102,241,.3)',display:'flex',alignItems:'center',justifyContent:'center'}},
+          e(Icon,{name:'Terminal',size:14,className:'text-indigo-400'})
+        ),
+        e('span',{style:{fontFamily:"'JetBrains Mono',monospace",fontSize:13,fontWeight:500,color:'#e2e8f0'}},
+          'vansh',e('span',{style:{color:'#818cf8'}},'.'),'dev'
+        )
+      ),
+      e('nav',{style:{display:'flex',alignItems:'center',gap:4}},
+        ...links.map(({l,h})=>e('button',{key:h,onClick:()=>go(h),style:{
+          padding:'8px 16px',borderRadius:10,fontSize:13,fontWeight:500,border:'none',cursor:'pointer',transition:'all .2s',
+          color:active===h?'#818cf8':'#94a3b8',background:active===h?'rgba(99,102,241,.1)':'transparent'
+        },
+        onMouseEnter:e=>e.currentTarget.style.color='#f1f5f9',
+        onMouseLeave:e=>e.currentTarget.style.color=active===h?'#818cf8':'#94a3b8'},l)),
+        e('a',{href:'#',style:{
+          marginLeft:12,display:'flex',alignItems:'center',gap:6,padding:'8px 16px',borderRadius:10,
+          background:'#4f46e5',color:'white',fontSize:13,fontWeight:600,textDecoration:'none',transition:'all .2s'
+        },
+        onMouseEnter:e=>e.currentTarget.style.background='#6366f1',
+        onMouseLeave:e=>e.currentTarget.style.background='#4f46e5'},
+          e(Icon,{name:'Download',size:13}),'Resume'
+        )
+      )
+    )
+  );
+}
+
+// ─── HERO ────────────────────────────────────────────────────────────────────
+function Hero(){
+  const go=(id)=>document.querySelector(id)?.scrollIntoView({behavior:'smooth'});
+  const stats=[
+    {icon:'Code2',label:'3 Projects',sub:'shipped'},
+    {icon:'GitMerge',label:'Open Source',sub:'contributor'},
+    {icon:'Globe',label:'Full-Stack',sub:'engineer'},
+  ];
+  return e('section',{id:'about',style:{minHeight:'100vh',display:'flex',flexDirection:'column',justifyContent:'center',position:'relative',overflow:'hidden',paddingTop:64}},
+    e('div',{style:{position:'absolute',inset:0,opacity:.03,backgroundImage:'linear-gradient(rgba(99,102,241,1) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,1) 1px,transparent 1px)',backgroundSize:'60px 60px'}}),
+    e('div',{style:{position:'absolute',top:'25%',left:'33%',width:384,height:384,background:'rgba(99,102,241,.07)',borderRadius:'50%',filter:'blur(64px)',pointerEvents:'none'}}),
+    e('div',{style:{position:'absolute',bottom:'25%',right:'25%',width:320,height:320,background:'rgba(52,211,153,.05)',borderRadius:'50%',filter:'blur(64px)',pointerEvents:'none'}}),
+    e('div',{style:{position:'relative',maxWidth:1152,margin:'0 auto',padding:'80px 24px'}},
+      e('div',{style:{display:'inline-flex',alignItems:'center',gap:8,padding:'6px 12px',borderRadius:999,background:'rgba(52,211,153,.1)',border:'1px solid rgba(52,211,153,.2)',marginBottom:32},className:'animate-fade'},
+        e('span',{style:{width:8,height:8,borderRadius:'50%',background:'#34d399'},className:'animate-pulse'}),
+        e('span',{style:{color:'#34d399',fontSize:12,fontWeight:500,letterSpacing:'0.05em',fontFamily:"'JetBrains Mono',monospace"}},'Open to full-time roles & freelance')
+      ),
+      e('h1',{style:{fontSize:'clamp(2.8rem,7vw,5rem)',fontWeight:800,lineHeight:1.06,letterSpacing:'-0.02em',marginBottom:24},className:'animate-up'},
+        e('span',{style:{color:'#f1f5f9'}},"Hi, I'm "),
+        e('span',{className:'gradient-text'},'Vansh'),
+        e('span',{style:{display:'block',color:'#f1f5f9',marginTop:8}},'I build things'),
+        e('span',{className:'gradient-text',style:{display:'block'}},'for the web.')
+      ),
+      e('p',{style:{color:'#94a3b8',fontSize:'clamp(1rem,2vw,1.15rem)',maxWidth:600,lineHeight:1.75,marginBottom:40,fontWeight:300}},
+        'Full-stack engineer focused on ',e('strong',{style:{color:'#e2e8f0',fontWeight:500}},'distributed systems'),', ',
+        e('strong',{style:{color:'#e2e8f0',fontWeight:500}},'open-source tooling'),', and crafting ',
+        e('strong',{style:{color:'#e2e8f0',fontWeight:500}},'robust web applications'),' that scale. Currently studying CS at IIT Delhi.'
+      ),
+      e('div',{style:{display:'flex',flexWrap:'wrap',gap:16,marginBottom:40}},
+        ...stats.map(({icon,label,sub})=>e('div',{key:label,style:{
+          display:'flex',alignItems:'center',gap:12,padding:'10px 16px',borderRadius:14,
+          background:'rgba(30,42,74,.5)',border:'1px solid rgba(51,65,85,.5)'}},
+          e('div',{style:{width:34,height:34,borderRadius:10,background:'rgba(99,102,241,.12)',border:'1px solid rgba(99,102,241,.2)',display:'flex',alignItems:'center',justifyContent:'center'}},
+            e(Icon,{name:icon,size:14,className:'text-indigo-400'})
+          ),
+          e('div',{},e('p',{style:{color:'#e2e8f0',fontSize:13,fontWeight:600,lineHeight:1}},$label),e('p',{style:{color:'#64748b',fontSize:11,marginTop:3}},sub))
+        ))
+      ),
+      e('div',{style:{display:'flex',flexWrap:'wrap',gap:16,marginBottom:56}},
+        e('button',{onClick:()=>go('#projects'),style:{
+          padding:'12px 24px',borderRadius:14,background:'#4f46e5',color:'white',fontWeight:600,fontSize:13,border:'none',cursor:'pointer',
+          transition:'all .2s',boxShadow:'0 8px 24px rgba(99,102,241,.25)'},
+          onMouseEnter:e=>{e.currentTarget.style.background='#6366f1';e.currentTarget.style.transform='translateY(-2px)'},
+          onMouseLeave:e=>{e.currentTarget.style.background='#4f46e5';e.currentTarget.style.transform='translateY(0)'}
+        },'View My Work'),
+        e('button',{onClick:()=>go('#contact'),style:{
+          padding:'12px 24px',borderRadius:14,background:'rgba(30,42,74,.7)',color:'#e2e8f0',fontWeight:600,fontSize:13,
+          border:'1px solid rgba(51,65,85,.6)',cursor:'pointer',transition:'all .2s'},
+          onMouseEnter:e=>e.currentTarget.style.borderColor='rgba(99,102,241,.4)',
+          onMouseLeave:e=>e.currentTarget.style.borderColor='rgba(51,65,85,.6)'
+        },'Contact Me')
+      ),
+      e('div',{style:{display:'flex',alignItems:'center',gap:16}},
+        e('span',{style:{color:'#475569',fontSize:11,fontFamily:"'JetBrains Mono',monospace"}},'find me on'),
+        e('div',{style:{height:1,width:32,background:'#334155'}}),
+        ...['Github','Linkedin','Mail'].map(name=>e('a',{key:name,href:'#',target:'_blank',
+          style:{width:40,height:40,borderRadius:10,background:'rgba(30,42,74,.6)',border:'1px solid rgba(51,65,85,.5)',
+            display:'flex',alignItems:'center',justifyContent:'center',transition:'all .2s',color:'#94a3b8',textDecoration:'none'},
+          onMouseEnter:e=>{e.currentTarget.style.color='#818cf8';e.currentTarget.style.borderColor='rgba(99,102,241,.35)';e.currentTarget.style.background='rgba(99,102,241,.1)'},
+          onMouseLeave:e=>{e.currentTarget.style.color='#94a3b8';e.currentTarget.style.borderColor='rgba(51,65,85,.5)';e.currentTarget.style.background='rgba(30,42,74,.6)'}
+        },e(Icon,{name:name,size:15})))
+      )
+    ),
+    e('button',{onClick:()=>go('#skills'),style:{
+      position:'absolute',bottom:32,left:'50%',transform:'translateX(-50%)',
+      display:'flex',flexDirection:'column',alignItems:'center',gap:8,
+      background:'none',border:'none',cursor:'pointer',color:'#475569',transition:'color .2s'},
+      onMouseEnter:e=>e.currentTarget.style.color='#94a3b8',
+      onMouseLeave:e=>e.currentTarget.style.color='#475569'
+    },
+      e('span',{style:{fontSize:10,fontFamily:"'JetBrains Mono',monospace",letterSpacing:'0.15em'}},'scroll'),
+      e('span',{className:'animate-bounce',style:{display:'flex'}},e(Icon,{name:'ArrowDown',size:13}))
+    )
+  );
+}
+
+// ─── SKILLS ──────────────────────────────────────────────────────────────────
+const CAT_ICONS={Frontend:'Layers',Backend:'Server',Languages:'Code',Databases:'Database','Tools & DevOps':'Wrench'};
+const CAT_COLORS={
+  Frontend:{border:'rgba(99,102,241,.45)',icon:'#818cf8',bg:'rgba(99,102,241,.1)',tagBg:'rgba(99,102,241,.1)',tagColor:'#a5b4fc',tagBorder:'rgba(99,102,241,.2)'},
+  Backend:{border:'rgba(139,92,246,.45)',icon:'#a78bfa',bg:'rgba(139,92,246,.1)',tagBg:'rgba(139,92,246,.1)',tagColor:'#c4b5fd',tagBorder:'rgba(139,92,246,.2)'},
+  Languages:{border:'rgba(52,211,153,.45)',icon:'#34d399',bg:'rgba(52,211,153,.1)',tagBg:'rgba(52,211,153,.1)',tagColor:'#6ee7b7',tagBorder:'rgba(52,211,153,.2)'},
+  Databases:{border:'rgba(34,211,238,.45)',icon:'#22d3ee',bg:'rgba(34,211,238,.1)',tagBg:'rgba(34,211,238,.1)',tagColor:'#67e8f9',tagBorder:'rgba(34,211,238,.2)'},
+  'Tools & DevOps':{border:'rgba(251,191,36,.45)',icon:'#fbbf24',bg:'rgba(251,191,36,.1)',tagBg:'rgba(251,191,36,.1)',tagColor:'#fcd34d',tagBorder:'rgba(251,191,36,.2)'},
+};
+
+function Skills(){
+  const [skills,setSkills]=useState({});
+  const [loading,setLoading]=useState(true);
+  useEffect(()=>{
+    mockFetch('/api/skills').then(r=>r.json()).then(d=>setSkills(d.data)).finally(()=>setLoading(false));
+  },[]);
+
+  return e('section',{id:'skills',style:{padding:'96px 0',position:'relative'}},
+    e('div',{style:{maxWidth:1152,margin:'0 auto',padding:'0 24px'}},
+      e('div',{style:{marginBottom:56}},
+        e('p',{style:{color:'#818cf8',fontSize:11,fontFamily:"'JetBrains Mono',monospace",letterSpacing:'0.12em',textTransform:'uppercase',marginBottom:12}},'02 // capabilities'),
+        e('h2',{style:{fontSize:'clamp(1.8rem,4vw,2.5rem)',fontWeight:700,color:'#f1f5f9',margin:0}},'Tech Stack'),
+        e('p',{style:{color:'#64748b',marginTop:12,maxWidth:480}},'Tools and technologies I work with daily to build full-stack products.')
+      ),
+      loading
+        ? e('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:20}},
+            ...[1,2,3,4,5].map(i=>e('div',{key:i,style:{height:180,borderRadius:16,background:'rgba(30,42,74,.4)'},className:'animate-pulse'}))
+          )
+        : e('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:20}},
+            ...Object.entries(skills).map(([cat,items])=>{
+              const c=CAT_COLORS[cat]||CAT_COLORS.Frontend;
+              const icon=CAT_ICONS[cat]||'Code';
+              return e('div',{key:cat,className:'card-glow',
+                style:{padding:24,borderRadius:20,background:'rgba(15,26,61,.3)',border:'1px solid rgba(51,65,85,.4)',transition:'all .3s'},
+                onMouseEnter:ev=>ev.currentTarget.style.borderColor=c.border,
+                onMouseLeave:ev=>ev.currentTarget.style.borderColor='rgba(51,65,85,.4)'},
+                e('div',{style:{display:'flex',alignItems:'center',gap:12,marginBottom:20}},
+                  e('div',{style:{width:36,height:36,borderRadius:12,background:c.bg,display:'flex',alignItems:'center',justifyContent:'center'}},
+                    e(Icon,{name:icon,size:15,className:'',style:{color:c.icon}})
+                  ),
+                  e('h3',{style:{color:'#e2e8f0',fontWeight:600,fontSize:13,margin:0}},cat)
+                ),
+                e('div',{style:{display:'flex',flexWrap:'wrap',gap:8}},
+                  ...items.map(s=>e('span',{key:s,style:{
+                    padding:'4px 10px',borderRadius:8,fontSize:11,fontWeight:500,border:`1px solid ${c.tagBorder}`,
+                    background:c.tagBg,color:c.tagColor,transition:'transform .15s',cursor:'default'},
+                    onMouseEnter:ev=>ev.currentTarget.style.transform='scale(1.06)',
+                    onMouseLeave:ev=>ev.currentTarget.style.transform='scale(1)'},s))
+                )
+              );
+            })
+          )
+    )
+  );
+}
+
+// ─── PROJECTS ────────────────────────────────────────────────────────────────
+const ALL_TAGS=['All','React','Node.js','Express','MongoDB','TypeScript','Python','FastAPI','PostgreSQL','Docker','Java','WebSockets',];
+
+function ProjectCard({p}){
+  const [hover,setHover]=useState(false);
+  return e('div',{className:'card-glow',
+    style:{display:'flex',flexDirection:'column',padding:24,borderRadius:20,
+      background:hover?'rgba(15,26,61,.5)':'rgba(15,26,61,.3)',
+      border:hover?'1px solid rgba(99,102,241,.4)':'1px solid rgba(51,65,85,.4)',
+      transition:'all .3s'},
+    onMouseEnter:()=>setHover(true),onMouseLeave:()=>setHover(false)},
+    e('div',{style:{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:16}},
+      e('div',{style:{display:'flex',alignItems:'center',gap:8}},
+        e('div',{style:{width:32,height:32,borderRadius:10,background:'rgba(99,102,241,.12)',border:'1px solid rgba(99,102,241,.2)',display:'flex',alignItems:'center',justifyContent:'center'}},
+          e('span',{style:{color:'#818cf8',fontSize:11,fontFamily:"'JetBrains Mono',monospace",fontWeight:700}},p.title[0])
+        ),
+        p.featured&&e('span',{style:{display:'flex',alignItems:'center',gap:4,padding:'2px 8px',borderRadius:999,background:'rgba(251,191,36,.1)',border:'1px solid rgba(251,191,36,.2)',color:'#fbbf24',fontSize:11,fontWeight:500}},
+          e(Icon,{name:'Star',size:10}),'Featured'
+        )
+      ),
+      e('div',{style:{display:'flex',gap:8,opacity:hover?1:0,transition:'opacity .2s'}},
+        e('a',{href:p.github,target:'_blank',rel:'noopener noreferrer',
+          style:{width:32,height:32,borderRadius:8,background:'rgba(51,65,85,.6)',display:'flex',alignItems:'center',justifyContent:'center',transition:'all .2s',color:'#94a3b8',textDecoration:'none'},
+          onMouseEnter:ev=>ev.currentTarget.style.color='#f1f5f9',onMouseLeave:ev=>ev.currentTarget.style.color='#94a3b8'},
+          e(Icon,{name:'Github',size:13})
+        ),
+        e('a',{href:p.demo,target:'_blank',rel:'noopener noreferrer',
+          style:{width:32,height:32,borderRadius:8,background:'rgba(79,70,229,.7)',display:'flex',alignItems:'center',justifyContent:'center',transition:'all .2s',color:'#c7d2fe',textDecoration:'none'},
+          onMouseEnter:ev=>ev.currentTarget.style.background='#6366f1',onMouseLeave:ev=>ev.currentTarget.style.background='rgba(79,70,229,.7)'},
+          e(Icon,{name:'ExternalLink',size:13})
+        )
+      )
+    ),
+    e('h3',{style:{color:'#f1f5f9',fontWeight:700,fontSize:17,marginBottom:8,marginTop:0}},p.title),
+    e('p',{style:{color:'#94a3b8',fontSize:13,lineHeight:1.7,marginBottom:20,flexGrow:1,marginTop:0}},p.description),
+    e('div',{style:{display:'flex',flexWrap:'wrap',gap:6,marginBottom:20}},
+      ...p.tags.map(t=>e('span',{key:t,style:{
+        padding:'4px 10px',borderRadius:8,fontSize:11,fontFamily:"'JetBrains Mono',monospace",fontWeight:500,
+        background:'rgba(51,65,85,.5)',color:'#94a3b8',border:'1px solid rgba(71,85,105,.4)',transition:'color .2s'},
+        onMouseEnter:ev=>ev.currentTarget.style.color='#e2e8f0',
+        onMouseLeave:ev=>ev.currentTarget.style.color='#94a3b8'},t))
+    ),
+    e('div',{style:{paddingTop:16,borderTop:'1px solid rgba(51,65,85,.4)',display:'flex',alignItems:'center',gap:16}},
+      e('a',{href:p.github,target:'_blank',rel:'noopener noreferrer',style:{display:'flex',alignItems:'center',gap:6,fontSize:11,color:'#64748b',textDecoration:'none',transition:'color .2s'},
+        onMouseEnter:ev=>ev.currentTarget.style.color='#94a3b8',onMouseLeave:ev=>ev.currentTarget.style.color='#64748b'},
+        e(Icon,{name:'Github',size:11}),'Source code'
+      ),
+      e('a',{href:p.demo,target:'_blank',rel:'noopener noreferrer',style:{display:'flex',alignItems:'center',gap:6,fontSize:11,color:'#6366f1',textDecoration:'none',transition:'color .2s'},
+        onMouseEnter:ev=>ev.currentTarget.style.color='#818cf8',onMouseLeave:ev=>ev.currentTarget.style.color='#6366f1'},
+        e(Icon,{name:'ExternalLink',size:11}),'Live demo'
+      )
+    )
+  );
+}
+
+function Projects(){
+  const [projects,setProjects]=useState([]);
+  const [activeTag,setActiveTag]=useState('All');
+  const [loading,setLoading]=useState(true);
+
+  const load=(tag)=>{
+    setLoading(true);
+    const url=tag&&tag!=='All'?`/api/projects?tag=${encodeURIComponent(tag)}`:'/api/projects';
+    mockFetch(url).then(r=>r.json()).then(d=>setProjects(d.data||[])).finally(()=>setLoading(false));
+  };
+  useEffect(()=>load('All'),[]);
+
+  const filter=(tag)=>{setActiveTag(tag);load(tag)};
+
+  return e('section',{id:'projects',style:{padding:'96px 0',position:'relative'}},
+    e('div',{style:{position:'absolute',top:0,left:0,right:0,height:1,background:'linear-gradient(90deg,transparent,rgba(51,65,85,.4),transparent)'}}),
+    e('div',{style:{maxWidth:1152,margin:'0 auto',padding:'0 24px'}},
+      e('div',{style:{marginBottom:40}},
+        e('p',{style:{color:'#818cf8',fontSize:11,fontFamily:"'JetBrains Mono',monospace",letterSpacing:'0.12em',textTransform:'uppercase',marginBottom:12}},'03 // work'),
+        e('h2',{style:{fontSize:'clamp(1.8rem,4vw,2.5rem)',fontWeight:700,color:'#f1f5f9',margin:0}},'Projects'),
+        e('p',{style:{color:'#64748b',marginTop:12,maxWidth:480}},"Things I've designed, architected, and shipped — from solo experiments to production systems.")
+      ),
+      e('div',{style:{marginBottom:40,overflowX:'auto',paddingBottom:8}},
+        e('div',{style:{display:'flex',gap:8,minWidth:'max-content'}},
+          ...ALL_TAGS.map(tag=>e('button',{key:tag,onClick:()=>filter(tag),style:{
+            padding:'6px 14px',borderRadius:8,fontSize:11,fontWeight:500,fontFamily:"'JetBrains Mono',monospace",
+            border:`1px solid ${activeTag===tag?'#6366f1':'rgba(51,65,85,.4)'}`,
+            background:activeTag===tag?'#4f46e5':'rgba(30,42,74,.5)',
+            color:activeTag===tag?'white':'#94a3b8',
+            cursor:'pointer',transition:'all .2s',whiteSpace:'nowrap',
+            boxShadow:activeTag===tag?'0 4px 16px rgba(99,102,241,.2)':'none'},
+            onMouseEnter:ev=>{if(activeTag!==tag){ev.currentTarget.style.color='#e2e8f0';ev.currentTarget.style.borderColor='rgba(99,102,241,.3)'}},
+            onMouseLeave:ev=>{if(activeTag!==tag){ev.currentTarget.style.color='#94a3b8';ev.currentTarget.style.borderColor='rgba(51,65,85,.4)'}}
+          },tag))
+        )
+      ),
+      loading
+        ? e('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(320px,1fr))',gap:20}},
+            ...[1,2,3,4,5,6].map(i=>e('div',{key:i,style:{height:260,borderRadius:20,background:'rgba(30,42,74,.4)'},className:'animate-pulse'}))
+          )
+        : projects.length===0
+          ? e('div',{style:{textAlign:'center',padding:'80px 0'}},
+              e('p',{style:{color:'#64748b',fontFamily:"'JetBrains Mono',monospace",fontSize:13}},`No projects found for "${activeTag}"`),
+              e('button',{onClick:()=>filter('All'),style:{marginTop:16,color:'#818cf8',background:'none',border:'none',cursor:'pointer',fontSize:13,transition:'color .2s'},
+                onMouseEnter:ev=>ev.currentTarget.style.color='#a5b4fc',onMouseLeave:ev=>ev.currentTarget.style.color='#818cf8'},'Clear filter')
+            )
+          : e('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(320px,1fr))',gap:20}},
+              ...projects.map(p=>e(ProjectCard,{key:p.id,p}))
+            ),
+      e('div',{style:{marginTop:56,textAlign:'center'}},
+        e('a',{href:'https://github.com/VanshChoudhary7/',target:'_blank',rel:'noopener noreferrer',
+          style:{display:'inline-flex',alignItems:'center',gap:8,padding:'12px 24px',borderRadius:14,
+            border:'1px solid rgba(51,65,85,.6)',background:'rgba(30,42,74,.4)',color:'#cbd5e1',
+            fontSize:13,fontWeight:500,textDecoration:'none',transition:'all .2s'},
+          onMouseEnter:ev=>{ev.currentTarget.style.color='white';ev.currentTarget.style.borderColor='rgba(51,65,85,.9)';ev.currentTarget.style.background='rgba(30,42,74,.8)'},
+          onMouseLeave:ev=>{ev.currentTarget.style.color='#cbd5e1';ev.currentTarget.style.borderColor='rgba(51,65,85,.6)';ev.currentTarget.style.background='rgba(30,42,74,.4)'}},
+          e(Icon,{name:'Github',size:15}),'See more on GitHub'
+        )
+      )
+    )
+  );
+}
+
+// ─── CONTACT ─────────────────────────────────────────────────────────────────
+function Contact(){
+  const [form,setForm]=useState({name:'',email:'',subject:'',message:''});
+  const [errors,setErrors]=useState([]);
+  const [status,setStatus]=useState('idle');
+  const [successMsg,setSuccessMsg]=useState('');
+
+  const onChange=ev=>{setForm(p=>({...p,[ev.target.name]:ev.target.value}));setErrors([])};
+
+  const onSubmit=async ev=>{
+    ev.preventDefault();setStatus('loading');setErrors([]);
+    const r=await mockFetch('/api/contact',{method:'POST',body:JSON.stringify(form)});
+    const d=await r.json();
+    if(!r.ok){setErrors(d.errors||['Something went wrong.']);setStatus('error');return;}
+    setSuccessMsg(d.message);setStatus('success');setForm({name:'',email:'',subject:'',message:''});
+  };
+
+  const inp={background:'rgba(30,42,74,.5)',border:'1px solid rgba(51,65,85,.6)',color:'#f1f5f9',
+    borderRadius:12,padding:'12px 16px',fontSize:13,width:'100%',outline:'none',transition:'all .2s',fontFamily:'Inter,sans-serif'};
+
+  const contacts=[
+    {icon:'Mail',label:'Email',value:'Drop a Messege',href:'mailto:workwith.vansh97@gmail.com'},
+    {icon:'Linkedin',label:'LinkedIn',value:'Connect On LinkedIn',href:'https://www.linkedin.com/in/vansh-choudhary-3a1142334/'},
+  ];
+
+  return e('section',{id:'contact',style:{padding:'96px 0',position:'relative'}},
+    e('div',{style:{position:'absolute',top:0,left:0,right:0,height:1,background:'linear-gradient(90deg,transparent,rgba(51,65,85,.4),transparent)'}}),
+    e('div',{style:{position:'absolute',bottom:0,left:'50%',transform:'translateX(-50%)',width:600,height:256,background:'rgba(99,102,241,.04)',borderRadius:'50%',filter:'blur(64px)',pointerEvents:'none'}}),
+    e('div',{style:{position:'relative',maxWidth:1152,margin:'0 auto',padding:'0 24px'}},
+      e('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(300px,1fr))',gap:64,alignItems:'start'}},
+        // Left
+        e('div',{},
+          e('p',{style:{color:'#818cf8',fontSize:11,fontFamily:"'JetBrains Mono',monospace",letterSpacing:'0.12em',textTransform:'uppercase',marginBottom:12}},'04 // contact'),
+          e('h2',{style:{fontSize:'clamp(1.8rem,4vw,2.5rem)',fontWeight:700,color:'#f1f5f9',marginBottom:24}},"Let's build\nsomething together."),
+          e('p',{style:{color:'#94a3b8',lineHeight:1.75,marginBottom:32,fontSize:14}},'Whether you have a project in mind, want to talk engineering, or just want to connect — I\'m always up for a good conversation. I typically reply within 24 hours.'),
+          e('div',{style:{display:'flex',flexDirection:'column',gap:12}},
+            ...contacts.map(({icon,label,value,href})=>e('a',{key:label,href,target:'_blank',rel:'noopener noreferrer',
+              style:{display:'flex',alignItems:'center',gap:16,padding:16,borderRadius:16,
+                background:'rgba(15,26,61,.3)',border:'1px solid rgba(51,65,85,.4)',
+                textDecoration:'none',transition:'all .2s'},
+              onMouseEnter:ev=>{ev.currentTarget.style.borderColor='rgba(99,102,241,.3)';ev.currentTarget.style.background='rgba(15,26,61,.5)'},
+              onMouseLeave:ev=>{ev.currentTarget.style.borderColor='rgba(51,65,85,.4)';ev.currentTarget.style.background='rgba(15,26,61,.3)'}},
+              e('div',{style:{width:40,height:40,borderRadius:12,background:'rgba(99,102,241,.1)',border:'1px solid rgba(99,102,241,.2)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}},
+                e(Icon,{name:icon,size:15})
+              ),
+              e('div',{},
+                e('p',{style:{color:'#64748b',fontSize:11,margin:0}},$label),
+                e('p',{style:{color:'#e2e8f0',fontSize:13,fontWeight:500,margin:'2px 0 0'}},value)
+              )
+            ))
+          )
+        ),
+        // Form
+        e('div',{style:{padding:32,borderRadius:20,background:'rgba(15,26,61,.2)',border:'1px solid rgba(51,65,85,.4)'}},
+          status==='success'
+            ? e('div',{style:{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'48px 0',textAlign:'center',gap:16}},
+                e('div',{style:{width:64,height:64,borderRadius:'50%',background:'rgba(52,211,153,.12)',border:'1px solid rgba(52,211,153,.3)',display:'flex',alignItems:'center',justifyContent:'center'}},
+                  e(Icon,{name:'CheckCircle',size:28})
+                ),
+                e('div',{},
+                  e('h3',{style:{color:'#f1f5f9',fontWeight:600,fontSize:17,marginBottom:8}},'Message sent!'),
+                  e('p',{style:{color:'#94a3b8',fontSize:13,maxWidth:280,margin:'0 auto'}},successMsg)
+                ),
+                e('button',{onClick:()=>setStatus('idle'),style:{
+                  marginTop:16,padding:'10px 20px',borderRadius:12,background:'#4f46e5',color:'white',fontSize:13,fontWeight:500,border:'none',cursor:'pointer',transition:'all .2s'},
+                  onMouseEnter:ev=>ev.currentTarget.style.background='#6366f1',
+                  onMouseLeave:ev=>ev.currentTarget.style.background='#4f46e5'},'Send another')
+              )
+            : e('form',{onSubmit,style:{display:'flex',flexDirection:'column',gap:16}},
+                e('h3',{style:{color:'#f1f5f9',fontWeight:600,fontSize:15,margin:'0 0 4px'}},'Send a message'),
+                status==='error'&&errors.length>0&&e('div',{style:{display:'flex',alignItems:'flex-start',gap:10,padding:14,borderRadius:12,background:'rgba(239,68,68,.08)',border:'1px solid rgba(239,68,68,.2)',color:'#f87171',fontSize:12}},
+                  e(Icon,{name:'AlertCircle',size:14}),
+                  e('div',{style:{display:'flex',flexDirection:'column',gap:4}},errors.map((er,i)=>e('span',{key:i},er)))
+                ),
+                e('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}},
+                  e('input',{type:'text',name:'name',placeholder:'Your name',value:form.name,onChange,required,style:inp,
+                    onFocus:ev=>{ev.currentTarget.style.borderColor='rgba(99,102,241,.6)';ev.currentTarget.style.boxShadow='0 0 0 3px rgba(99,102,241,.1)';ev.currentTarget.style.background='rgba(30,42,74,.8)'},
+                    onBlur:ev=>{ev.currentTarget.style.borderColor='rgba(51,65,85,.6)';ev.currentTarget.style.boxShadow='none';ev.currentTarget.style.background='rgba(30,42,74,.5)'}}),
+                  e('input',{type:'email',name:'email',placeholder:'your@email.com',value:form.email,onChange,required,style:inp,
+                    onFocus:ev=>{ev.currentTarget.style.borderColor='rgba(99,102,241,.6)';ev.currentTarget.style.boxShadow='0 0 0 3px rgba(99,102,241,.1)'},
+                    onBlur:ev=>{ev.currentTarget.style.borderColor='rgba(51,65,85,.6)';ev.currentTarget.style.boxShadow='none'}})
+                ),
+                e('input',{type:'text',name:'subject',placeholder:'Subject',value:form.subject,onChange,required,style:inp,
+                  onFocus:ev=>{ev.currentTarget.style.borderColor='rgba(99,102,241,.6)';ev.currentTarget.style.boxShadow='0 0 0 3px rgba(99,102,241,.1)'},
+                  onBlur:ev=>{ev.currentTarget.style.borderColor='rgba(51,65,85,.6)';ev.currentTarget.style.boxShadow='none'}}),
+                e('textarea',{name:'message',placeholder:'Your message…',rows:5,value:form.message,onChange,required,
+                  style:{...inp,resize:'none'},
+                  onFocus:ev=>{ev.currentTarget.style.borderColor='rgba(99,102,241,.6)';ev.currentTarget.style.boxShadow='0 0 0 3px rgba(99,102,241,.1)'},
+                  onBlur:ev=>{ev.currentTarget.style.borderColor='rgba(51,65,85,.6)';ev.currentTarget.style.boxShadow='none'}}),
+                e('button',{type:'submit',disabled:status==='loading',style:{
+                  display:'flex',alignItems:'center',justifyContent:'center',gap:8,
+                  padding:'14px 24px',borderRadius:12,
+                  background:status==='loading'?'rgba(79,70,229,.5)':'#4f46e5',
+                  color:'white',fontWeight:600,fontSize:13,border:'none',cursor:status==='loading'?'not-allowed':'pointer',
+                  transition:'all .2s',boxShadow:'0 8px 24px rgba(99,102,241,.2)'},
+                  onMouseEnter:ev=>{if(status!=='loading'){ev.currentTarget.style.background='#6366f1';ev.currentTarget.style.transform='translateY(-2px)'}},
+                  onMouseLeave:ev=>{if(status!=='loading'){ev.currentTarget.style.background='#4f46e5';ev.currentTarget.style.transform='translateY(0)'}}},
+                  status==='loading'
+                    ? [e('div',{key:'sp',style:{width:14,height:14,border:'2px solid rgba(255,255,255,.3)',borderTopColor:'white',borderRadius:'50%'},className:'animate-spin'}),'Sending…']
+                    : [e(Icon,{key:'ic',name:'Send',size:14}),'Send Message']
+                )
+              )
+        )
+      )
+    )
+  );
+}
+
+// ─── FOOTER ──────────────────────────────────────────────────────────────────
+function Footer(){
+  return e('footer',{style:{padding:'40px 0',borderTop:'1px solid rgba(51,65,85,.5)'}},
+    e('div',{style:{maxWidth:1152,margin:'0 auto',padding:'0 24px',display:'flex',flexWrap:'wrap',alignItems:'center',justifyContent:'space-between',gap:24}},
+      e('div',{style:{display:'flex',alignItems:'center',gap:8}},
+        e('div',{style:{width:28,height:28,borderRadius:9,background:'rgba(99,102,241,.15)',border:'1px solid rgba(99,102,241,.3)',display:'flex',alignItems:'center',justifyContent:'center'}},
+          e(Icon,{name:'Terminal',size:12})
+        ),
+        e('span',{style:{fontFamily:"'JetBrains Mono',monospace",fontSize:12,color:'#64748b'}},
+          'vansh',e('span',{style:{color:'#818cf8'}},'.'),`dev`
+        )
+      ),
+      e('p',{style:{color:'#475569',fontSize:11,display:'flex',alignItems:'center',gap:6}},
+        'Built with ',e(Icon,{name:'Heart',size:10,className:'text-indigo-500'}),' using React, Express & Tailwind CSS'
+      ),
+      e('div',{style:{display:'flex',gap:10}},
+        ...['Github','Linkedin','Mail'].map(name=>e('a',{key:name,href:'#',target:'_blank',
+          style:{width:32,height:32,borderRadius:8,border:'1px solid rgba(30,42,74,.8)',background:'rgba(30,42,74,.4)',display:'flex',alignItems:'center',justifyContent:'center',transition:'all .2s',color:'#64748b',textDecoration:'none'},
+          onMouseEnter:ev=>{ev.currentTarget.style.color='#818cf8';ev.currentTarget.style.borderColor='rgba(99,102,241,.3)'},
+          onMouseLeave:ev=>{ev.currentTarget.style.color='#64748b';ev.currentTarget.style.borderColor='rgba(30,42,74,.8)'}},
+          e(Icon,{name,size:13})
+        ))
+      )
+    )
+  );
+}
+
+// ─── APP ─────────────────────────────────────────────────────────────────────
+function App(){
+  return e('div',{style:{minHeight:'100vh',background:'#060b18',color:'#f1f5f9'}},
+    e(Navbar),
+    e('main',{},e(Hero),e(Skills),e(Projects),e(Contact)),
+    e(Footer)
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(e(React.StrictMode,null,e(App)));
+</script>
+</body>
+</html>

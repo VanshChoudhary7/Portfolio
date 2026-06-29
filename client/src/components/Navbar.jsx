@@ -95,7 +95,7 @@ export default function Navbar() {
             </button>
           ))}
           <a
-            href="/resume.pdf"
+            href="./Vansh_Resume.pdf"
             download
             className="mt-2 flex items-center gap-2 px-4 py-3 rounded-lg bg-indigo-600 text-white text-sm font-medium"
           >

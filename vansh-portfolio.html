@@ -48,39 +48,26 @@ tailwind.config = {
 <body>
 <div id="root"></div>
 <script>
-// ─── MOCK API ────────────────────────────────────────────────────────────────
-const DB = {
-  projects:[
-    {id:"1",title:"PhishGuard",description: "An AI-powered phishing detection platform that analyzes suspicious URLs using machine learning and heuristic-based detection techniques. Features real-time URL analysis, phishing risk prediction, and an interactive awareness dashboard to help users identify and avoid online threats.",tags:["Python", "Machine Learning" , "Flask" , "React" , "Scikit-learn"],github:"https://github.com/VanshChoudhary7/PhishGuard",demo:"https://phish-gaurd-beta.vercel.app/",featured:true},
-  ],
-  skills:{
-    "Frontend":["React","Next.js","Tailwind CSS","Redux","Vite"],
-    "Backend":["Node.js","Express","FastAPI","Spring Boot","REST APIs"],
-    "Languages":["Java","JavaScript","Python","SQL"],
-    "Databases":["MongoDB","PostgreSQL","MySQL","Mongoose"],
-    "Tools & DevOps":["Docker","Git","Linux","AWS","CI/CD" ]
-  }
-};
+// ─── Real API ────────────────────────────────────────────────────────────────
+const API_BASE = 'https://portfolio-k66f.onrender.com';
 
 async function mockFetch(url, opts){
-  await new Promise(r=>setTimeout(r,400));
   if(url.startsWith('/api/projects')){
-  const res = await fetch('https://portfolio-k66f.onrender.com/api/projects');
-  return res;
-}
+    const tag=new URL(url,location.href).searchParams.get('tag');
+    const endpoint = tag && tag!=='All'
+      ? `${API_BASE}/api/projects?tag=${encodeURIComponent(tag)}`
+      : `${API_BASE}/api/projects`;
+    return fetch(endpoint);
+  }
   if(url==='/api/skills'){
-  const res = await fetch('https://portfolio-k66f.onrender.com/api/skills');
-  return res;
-}
+    return fetch(`${API_BASE}/api/skills`);
+  }
   if(url==='/api/contact'&&opts?.method==='POST'){
-    const body=JSON.parse(opts.body);
-    const errs=[];
-    if(!body.name||body.name.trim().length<2) errs.push("Name must be at least 2 characters.");
-    if(!body.email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) errs.push("A valid email is required.");
-    if(!body.subject||body.subject.trim().length<3) errs.push("Subject must be at least 3 characters.");
-    if(!body.message||body.message.trim().length<10) errs.push("Message must be at least 10 characters.");
-    if(errs.length) return {ok:false,status:400,json:()=>Promise.resolve({success:false,errors:errs})};
-    return {ok:true,status:201,json:()=>Promise.resolve({success:true,message:"Message received! I'll get back to you within 24 hours.",data:{id:Date.now()}})};
+    return fetch(`${API_BASE}/api/contact`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:opts.body
+    });
   }
   return {ok:false,status:404,json:()=>Promise.resolve({error:'Not found'})};
 }

@@ -92,7 +92,9 @@ import cors from "cors";
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -106,14 +108,8 @@ app.use(express.json());
 
 const readDB = () => JSON.parse(readFileSync(DB_PATH, "utf-8"));
 
-// Nodemailer transporter
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+
+
 
 // GET /api/projects
 app.get("/api/projects", (req, res) => {
@@ -154,19 +150,18 @@ app.post("/api/contact", async (req, res) => {
   }
 
   try {
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: process.env.EMAIL_USER, // sends to yourself
-      subject: `Portfolio Contact: ${subject.trim()}`,
-      html: `
-        <h3>New message from your portfolio</h3>
-        <p><strong>Name:</strong> ${name.trim()}</p>
-        <p><strong>Email:</strong> ${email.trim()}</p>
-        <p><strong>Subject:</strong> ${subject.trim()}</p>
-        <p><strong>Message:</strong><br/>${message.trim()}</p>
-        <p><strong>Received at:</strong> ${new Date().toISOString()}</p>
-      `,
-    });
+    await resend.emails.send({
+  from: "onboarding@resend.dev",
+  to: "workwith.vansh97@gmail.com",
+  subject: `Portfolio Contact: ${subject.trim()}`,
+  html: `
+    <h3>New message from your portfolio</h3>
+    <p><strong>Name:</strong> ${name.trim()}</p>
+    <p><strong>Email:</strong> ${email.trim()}</p>
+    <p><strong>Subject:</strong> ${subject.trim()}</p>
+    <p><strong>Message:</strong><br/>${message.trim()}</p>
+  `,
+});
 
     res.status(201).json({
       success: true,

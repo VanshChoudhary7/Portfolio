@@ -19,7 +19,7 @@ export default function AboutSection() {
             {/* Photo Container */}
             <div className="relative w-full h-full bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 transition-transform duration-300 group-hover:-translate-x-1 group-hover:-translate-y-1">
               <img 
-                src="../public/Vansh_pp.png" 
+                src="/Vansh_pp.png" 
                 alt="Vansh Profile" 
                 className="w-full h-full object-cover grayscale opacity-90 transition-all duration-300 group-hover:grayscale-0 group-hover:opacity-100"
               />

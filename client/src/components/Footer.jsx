@@ -1,4 +1,5 @@
 import { Github, Linkedin, Mail, Terminal, Heart } from "lucide-react";
+import { Coffee } from 'lucide-react'
 
 export default function Footer() {
   return (
@@ -14,7 +15,7 @@ export default function Footer() {
         </div>
 
         <p className="text-slate-600 text-xs flex items-center gap-1.5">
-  ©       {new Date().getFullYear()} · Crafted with <Coffee size={11} className="text-indigo-500" /> by <span className="text-slate-800 font-medium">Your Name</span>
+  ©       {new Date().getFullYear()} · Crafted with <Coffee size={11} className="text-indigo-500" /> by <span className="text-slate-800 font-medium">Vansh Choudhary</span>
         </p>
 
         <div className="flex items-center gap-3">

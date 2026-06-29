@@ -13,9 +13,9 @@ export default function Footer() {
           </span>
         </div>
 
-        {/* <p className="text-slate-600 text-xs flex items-center gap-1.5">
-          Built with <Heart size={11} className="text-indigo-500" /> using React, Express & Tailwind CSS
-        </p> */}
+        <p className="text-slate-600 text-xs flex items-center gap-1.5">
+  ©       {new Date().getFullYear()} · Crafted with <Coffee size={11} className="text-indigo-500" /> by <span className="text-slate-800 font-medium">Your Name</span>
+        </p>
 
         <div className="flex items-center gap-3">
           {[

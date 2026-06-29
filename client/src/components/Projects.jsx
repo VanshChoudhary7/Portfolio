@@ -93,7 +93,7 @@ export default function Projects() {
   const fetchProjects = (tag) => {
     setLoading(true);
     const url = tag && tag !== "All" ? `/api/projects?tag=${encodeURIComponent(tag)}` : "/api/projects";
-    fetch(url)
+    fetch(`${import.meta.env.VITE_API_URL}${url}`)
       .then((r) => r.json())
       .then((d) => setProjects(d.data || []))
       .catch(() => setProjects([]))

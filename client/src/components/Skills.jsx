@@ -55,20 +55,17 @@ export default function Skills() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/skills")
-      .then((r) => r.json())
-      .then((d) => setSkills(d.data))
-      .catch(() =>
-        setSkills({
-          Frontend: ["React", "Next.js", "Tailwind CSS", "Redux", "Vite"],
-          Backend: ["Node.js", "Express", "FastAPI", "Spring Boot", "REST APIs"],
-          Languages: ["Java","JavaScript", "Python", "SQL", "C++"],
-          Databases: ["MongoDB", "PostgreSQL", "MySQL", "Mongoose"],
-          "Tools & DevOps": ["Docker", "Git", "Linux", "AWS", "CI/CD",],
-        })
-      )
-      .finally(() => setLoading(false));
-  }, []);
+  console.log("API URL:", import.meta.env.VITE_API_URL);
+
+  fetch(`${import.meta.env.VITE_API_URL}/api/skills`)
+    .then((r) => r.json())
+    .then((d) => {
+      console.log(d);
+      setSkills(d.data);
+    })
+    .catch(console.error)
+    .finally(() => setLoading(false));
+}, []);
 
   return (
     <section id="skills" className="py-24 relative">

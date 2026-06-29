@@ -101,7 +101,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const DB_PATH = join(__dirname, "db.json");
 
-app.use(cors({ origin: ["http://localhost:5173", "https://vansh-portfolio-vert.vercel.app/"] }));
+app.use(cors({ origin: ["http://localhost:5173", "https://vansh-portfolio-vert.vercel.app"] }));
 app.use(express.json());
 
 const readDB = () => JSON.parse(readFileSync(DB_PATH, "utf-8"));
